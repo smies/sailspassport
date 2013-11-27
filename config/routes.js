@@ -35,8 +35,11 @@ module.exports.routes = {
                                                            failureRedirect: '/auth/login' }),
   '/auth/facebook': passport.authenticate('facebook', { scope: 'email' }),
   '/auth/facebook/return': passport.authenticate('facebook', { successRedirect: '/',
+                                                               failureRedirect: '/auth/login' }),
+  '/auth/twitter': passport.authenticate('twitter'),
+  '/auth/twitter/return': passport.authenticate('twitter', { successRedirect: '/',
                                                              failureRedirect: '/auth/login' }),
-
+  
   
   '/': 'HomeController'
 

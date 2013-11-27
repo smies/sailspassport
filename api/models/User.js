@@ -11,9 +11,9 @@ module.exports = {
   attributes: {
     givenName: 'STRING',
     familyName: 'STRING',
-    email: {
-      type: 'email', // Email type will get validated by the ORM
-      required: true
-    }
+    email: 'EMAIL',
+    google: 'EMAIL',
+    facebook: 'STRING',
+    twitter: 'STRING'
   }
 };

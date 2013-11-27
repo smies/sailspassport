@@ -8,16 +8,27 @@
  * http://sailsjs.org/#documentation
  */
 
+var criteriaFromProfile = {
+  'google': function (profile) {
+    return { 'google': profile.emails[0].value };
+  },
+  'facebook': function (profile) {
+  	return { 'facebook': profile.username };
+  },
+  'twitter': function (profile) {
+  	return { 'twitter': profile.username };
+  }
+};
+
 var processProfile = function (profile, done) {
-    User.findOneByEmail(profile.emails[0].value).done(function(err, user) {
+    var criteria = criteriaFromProfile[profile.provider](profile);
+    User.findOne(criteria).done(function(err, user) {
       if (err) { 
         done(err, user);
       } else if (!user) { // not found, so create new user
-      	User.create({
-      	  givenName: profile.name.givenName,
-      	  familyName: profile.name.familyName,
-      	  email: profile.emails[0].value
-      	}).done(function (err, user) {
+      	var newUser = sails.util.extend(criteria, sails.util.pick(profile.name, ['givenName', 'familyName']));
+
+      	User.create(newUser).done(function (err, user) {
       		done(err, user);
       	});
       } else {
@@ -30,7 +41,8 @@ module.exports.bootstrap = function (cb) {
 	
 	var passport = require('passport')
 	  , GoogleStrategy = require('passport-google').Strategy
-	  , FacebookStrategy = require('passport-facebook').Strategy;
+	  , FacebookStrategy = require('passport-facebook').Strategy
+	  , TwitterStrategy = require('passport-twitter').Strategy;
 	
 	// Passport session setup.
 	// To support persistent login sessions, Passport needs to be able to
@@ -69,6 +81,16 @@ module.exports.bootstrap = function (cb) {
 		}
 	));*/
 
+    passport.use(new TwitterStrategy({
+        consumerKey: sails.config.twitterConsumerKey,
+        consumerSecret: sails.config.twitterConsumerSecret,
+        callbackURL: sails.config.hostname + '/auth/twitter/return'
+      },
+      function(token, tokenSecret, profile, done) {
+        processProfile(profile, done);
+      }
+    ));
+
     passport.use(new FacebookStrategy({
         clientID: sails.config.facebookAppId,
         clientSecret: sails.config.facebookAppSecret,
@@ -84,6 +106,7 @@ module.exports.bootstrap = function (cb) {
         realm: sails.config.hostname + '/'
       },
       function(identifier, profile, done) {
+      	profile.provider = 'google'; // doesn't get set automatically for google
         processProfile(profile, done);
       }
     ));
